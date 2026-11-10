@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Makan Bill Splitter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Manrope:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one narrow card-free column — the answer on top, inputs below, receipt-style breakdown last */
+:root {
+  --bg: #ffffff;
+  --fg: #1f4d3a;
+  --ink: #1b1f1d;
+  --muted: #6b716e;
+  --line: #e4e7e5;
+  --soft: #f3f5f4;
+  --bad: #b3261e;
+  --display: "Instrument Serif", Georgia, serif;
+  --body: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e0f0e; --fg: #cfe8d9; --ink: #eef1ef; --muted: #98a19c; --line: #262a28; --soft: #191c1a; --bad: #f2a29b; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e0f0e; --fg: #cfe8d9; --ink: #eef1ef; --muted: #98a19c; --line: #262a28; --soft: #191c1a; --bad: #f2a29b; color-scheme: dark;
+}
+
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--body); font-size: 1rem; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 26rem; margin: 0 auto; padding-block: 2.5rem 3rem; display: flex; flex-direction: column; gap: 2rem; }
+
+header { display: flex; flex-direction: column; gap: 0.25rem; }
+.eyebrow { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--display); font-weight: 400; font-size: 2.6rem; line-height: 1; margin: 0; color: var(--fg); }
+
+/* The answer */
+.answer { border-bottom: 1px solid var(--fg); padding-bottom: 1.2rem; }
+.answer small { font-size: 0.8rem; color: var(--muted); letter-spacing: 0.04em; }
+.big { font-family: var(--display); font-size: clamp(3.4rem, 17vw, 4.6rem); line-height: 1; color: var(--fg); font-variant-numeric: tabular-nums; margin-top: 0.2rem; }
+.big span { font-size: 0.45em; margin-right: 0.15em; vertical-align: 0.6em; color: var(--muted); }
+
+/* Inputs */
+.field { display: flex; flex-direction: column; gap: 0.5rem; }
+.field > label, .field > .lbl { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.money { display: flex; align-items: center; gap: 0.5rem; border: 1px solid var(--line); border-radius: 14px; padding: 0 1rem; background: var(--soft); }
+.money:focus-within { border-color: var(--fg); }
+.money span { font-weight: 600; color: var(--muted); }
+.money input {
+  flex: 1; min-width: 0; border: none; background: transparent; color: var(--ink);
+  font: inherit; font-size: 1.6rem; font-weight: 600; padding: 0.7rem 0; outline: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.stepper { display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--line); border-radius: 14px; padding: 0.35rem; }
+.stepper button {
+  width: 3rem; height: 3rem; border-radius: 10px; border: none; cursor: pointer;
+  background: var(--soft); color: var(--fg); font: inherit; font-size: 1.5rem; font-weight: 500;
+}
+.stepper button:disabled { opacity: 0.35; cursor: default; }
+.stepper output { font-size: 1.5rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.stepper output em { font-style: normal; font-size: 0.9rem; font-weight: 500; color: var(--muted); margin-left: 0.3rem; }
+
+.segment { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; }
+.custom { display: flex; align-items: center; gap: 0.5rem; border: 1px solid var(--line); border-radius: 12px; padding: 0 1rem; background: var(--soft); }
+.custom:focus-within { border-color: var(--fg); }
+.custom input { flex: 1; min-width: 0; border: none; background: transparent; color: var(--ink); font: inherit; font-size: 1.2rem; font-weight: 600; padding: 0.7rem 0; outline: none; font-variant-numeric: tabular-nums; }
+.custom span { font-weight: 600; color: var(--muted); }
+.warn { color: #9a6700; font-size: 0.85rem; margin: 0; font-weight: 600; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .warn { color: #e3c35a; } }
+:root[data-theme="dark"] .warn { color: #e3c35a; }
+.segment.two { grid-template-columns: repeat(2, 1fr); }
+.segment button {
+  padding: 0.8rem 0.4rem; border-radius: 12px; border: 1px solid var(--line); background: transparent;
+  color: var(--ink); font: inherit; font-weight: 600; cursor: pointer;
+}
+.segment button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+
+.toggle {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  width: 100%; padding: 0.9rem 1rem; border-radius: 14px; border: 1px solid var(--line);
+  background: transparent; color: var(--ink); font: inherit; font-weight: 600; cursor: pointer; text-align: left;
+}
+.toggle small { display: block; font-weight: 400; font-size: 0.8rem; color: var(--muted); }
+.switch { flex: none; width: 2.8rem; height: 1.6rem; border-radius: 999px; background: var(--line); position: relative; transition: background .2s; }
+.switch::after { content: ""; position: absolute; top: 0.2rem; left: 0.2rem; width: 1.2rem; height: 1.2rem; border-radius: 50%; background: var(--bg); transition: transform .2s; }
+.toggle[aria-pressed="true"] .switch { background: var(--fg); }
+.toggle[aria-pressed="true"] .switch::after { transform: translateX(1.2rem); }
+@media (prefers-reduced-motion: reduce) { .switch, .switch::after { transition: none; } }
+
+button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+
+/* Receipt breakdown */
+.receipt { display: flex; flex-direction: column; gap: 0.45rem; font-variant-numeric: tabular-nums; }
+.row { display: flex; align-items: baseline; gap: 0.6rem; font-size: 0.95rem; }
+.row .dots { flex: 1; border-bottom: 1px dotted var(--line); transform: translateY(-0.3rem); }
+.row.total { font-weight: 700; padding-top: 0.5rem; border-top: 1px solid var(--line); margin-top: 0.2rem; }
+.note { font-size: 0.8rem; color: var(--muted); margin: 0; }
+.error { color: var(--bad); font-size: 0.85rem; margin: 0; font-weight: 600; }
+
+/* Names */
+.names { display: flex; flex-direction: column; gap: 0.4rem; }
+.cols { display: flex; gap: 0.5rem; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.cols .c-name { flex: 1; padding-left: 1.9rem; }
+.cols .c-own { width: 5.6rem; }
+.cols .c-owe { width: 5.2rem; text-align: right; }
+.name-row { display: flex; align-items: center; gap: 0.5rem; }
+.name-row .num { flex: none; width: 1.4rem; font-size: 0.8rem; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+.name-row input {
+  min-width: 0; padding: 0.7rem 0.8rem; border: 1px solid var(--line); border-radius: 12px;
+  background: var(--soft); color: var(--ink); font: inherit; font-size: 1rem;
+}
+.name-row input:focus { outline: none; border-color: var(--fg); }
+.name-row .name { flex: 1; }
+.name-row .own { flex: none; width: 5.6rem; box-sizing: border-box; font-variant-numeric: tabular-nums; }
+.name-row .owe { flex: none; width: 5.2rem; text-align: right; font-weight: 700; color: var(--fg); font-variant-numeric: tabular-nums; }
+.shared-line { font-size: 0.85rem; color: var(--muted); margin: 0.2rem 0 0; font-variant-numeric: tabular-nums; }
+
+/* Copy */
+.copy { display: flex; flex-direction: column; gap: 0.6rem; }
+.copy-btn {
+  min-height: 52px; border: none; border-radius: 999px; background: var(--fg); color: var(--bg);
+  font: inherit; font-weight: 700; font-size: 1rem; cursor: pointer;
+}
+.copy-btn.done { background: var(--soft); color: var(--fg); }
+.copy textarea {
+  width: 100%; box-sizing: border-box; min-height: 10rem; padding: 0.8rem; border: 1px solid var(--line); border-radius: 12px;
+  background: var(--soft); color: var(--ink); font: inherit; font-size: 0.9rem; resize: vertical;
+}
+</style>
+<style>
+  :root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  body { margin: 0; }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+
+<main class="wrap">
+  <header>
+    <span class="eyebrow">Eating out</span>
+    <h1>Split the bill</h1>
+  </header>
+
+  <section class="answer" aria-live="polite">
+    <small id="answer-label">Each person pays</small>
+    <div class="big"><span>RM</span><b id="big-number">35.00</b></div>
+  </section>
+
+  <div class="field">
+    <label for="bill">Total bill</label>
+    <div class="money">
+      <span>RM</span>
+      <input id="bill" type="number" inputmode="decimal" min="0" step="0.01" value="120.00" placeholder="0.00">
+    </div>
+    <p id="bill-error" class="error" hidden>Type the bill amount, for example 85.50.</p>
+  </div>
+
+  <div class="field">
+    <span class="lbl" id="people-lbl">Number of people</span>
+    <div class="stepper" role="group" aria-labelledby="people-lbl">
+      <button id="minus" type="button" aria-label="One less person">−</button>
+      <output id="people">4<em>people</em></output>
+      <button id="plus" type="button" aria-label="One more person">+</button>
+    </div>
+  </div>
+
+  <div class="field">
+    <span class="lbl" id="mode-lbl">How to split</span>
+    <div class="segment two" role="group" aria-labelledby="mode-lbl">
+      <button type="button" class="mode-btn" data-mode="equal" aria-pressed="true">Equal split</button>
+      <button type="button" class="mode-btn" data-mode="items" aria-pressed="false">By what each ate</button>
+    </div>
+    <p class="note" id="mode-help">Everyone pays the same.</p>
+  </div>
+
+  <div class="field">
+    <span class="lbl">Who's eating</span>
+    <div class="cols" id="cols" hidden><span class="c-name">Name</span><span class="c-own">Own items</span><span class="c-owe">Pays</span></div>
+    <div class="names" id="names"></div>
+    <p class="shared-line" id="shared-line" hidden></p>
+    <p class="error" id="own-error" hidden></p>
+  </div>
+
+  <div class="field">
+    <span class="lbl" id="sc-lbl">Service charge</span>
+    <div class="segment" role="group" aria-labelledby="sc-lbl">
+      <button type="button" class="rate-btn" data-rate="0" aria-pressed="false">0%</button>
+      <button type="button" class="rate-btn" data-rate="5" aria-pressed="false">5%</button>
+      <button type="button" class="rate-btn" data-rate="10" aria-pressed="true">10%</button>
+      <button type="button" class="rate-btn" data-rate="other" aria-pressed="false">Other</button>
+    </div>
+    <div class="custom" id="custom-box" hidden>
+      <input id="custom-rate" type="number" inputmode="decimal" min="0" max="100" step="0.5" placeholder="e.g. 15" aria-label="Custom service charge in percent">
+      <span>%</span>
+    </div>
+    <p class="warn" id="rate-warn" hidden></p>
+  </div>
+
+  <div class="field">
+    <button id="sst" class="toggle" type="button" aria-pressed="true">
+      <span><span id="sst-title">SST 6%</span><small>Added on the bill plus service charge</small></span>
+      <span class="switch" aria-hidden="true"></span>
+    </button>
+    <div class="segment two" id="sst-rates" role="group" aria-label="SST rate">
+      <button type="button" class="sst-btn" data-sst="6" aria-pressed="true">6% · Food &amp; drinks</button>
+      <button type="button" class="sst-btn" data-sst="8" aria-pressed="false">8% · Alcohol</button>
+    </div>
+  </div>
+
+  <section class="receipt" aria-label="Breakdown">
+    <div class="row"><span>Bill</span><span class="dots"></span><span id="r-bill">RM 120.00</span></div>
+    <div class="row"><span id="r-sc-label">Service charge 10%</span><span class="dots"></span><span id="r-sc">RM 12.00</span></div>
+    <div class="row" id="r-sst-row"><span id="r-sst-label">SST 6%</span><span class="dots"></span><span id="r-sst">RM 7.92</span></div>
+    <div class="row"><span>Rounding adj.</span><span class="dots"></span><span id="r-round">−RM 0.02</span></div>
+    <div class="row total"><span>Total</span><span class="dots"></span><span id="r-total">RM 139.90</span></div>
+    <div class="row"><span id="r-collect-label">4 × RM 35.00 collected</span><span class="dots"></span><span id="r-collect">RM 140.00</span></div>
+    <p class="note" id="r-extra">RM 0.10 extra stays with whoever pays the cashier.</p>
+    <p class="note">Total is rounded to the nearest 5 sen, following Bank Negara's rounding rule. Each share is then rounded up to the next 5 sen so the bill is always covered. Example amounts filled in; change them to your real bill.</p>
+  </section>
+
+  <section class="copy">
+    <button id="copy" class="copy-btn" type="button">Copy for WhatsApp</button>
+    <p class="note" id="copy-status" aria-live="polite">Copies the total and what each person owes, ready to paste in your group chat.</p>
+    <textarea id="copy-text" aria-label="Message to copy" readonly hidden></textarea>
+  </section>
+</main>
+
+<script>
+  // 1. Remember the current choices
+  let people = 4;
+  let rate = 10;          // service charge in %
+  let sstOn = true;       // SST switched on?
+  let sstRate = 6;        // 6% food & drinks, 8% alcohol
+  let mode = "equal";     // "equal" or "items"
+  const names = ["Ethan", "", "", ""];  // one name per person
+  const own = [0, 0, 0, 0];             // each person's own items (RM)
+  let lastResult = null;                // latest numbers, for the copy button
+
+  // 2. Find the parts of the page we need
+  const billInput = document.getElementById("bill");
+  const peopleOut = document.getElementById("people");
+  const minusBtn = document.getElementById("minus");
+  const plusBtn = document.getElementById("plus");
+  const rateBtns = document.querySelectorAll(".rate-btn");
+  const modeBtns = document.querySelectorAll(".mode-btn");
+
+  function rm(n) { return "RM " + n.toFixed(2); }
+
+  // Custom service charge: read the box, check it, return the rate to use
+  const customBox = document.getElementById("custom-box");
+  const customInput = document.getElementById("custom-rate");
+  const rateWarn = document.getElementById("rate-warn");
+  let usingCustom = false;
+  function readCustom() {
+    const v = parseFloat(customInput.value);
+    let msg = "";
+    let r = 0;
+    if (customInput.value === "" || isNaN(v)) {
+      msg = "Type the service charge %, for example 15.";
+    } else if (v < 0) {
+      msg = "Service charge can't be negative.";
+    } else if (v > 100) {
+      msg = "That's over 100%. Check the number.";
+    } else {
+      r = v;
+      if (v > 30) msg = "Are you sure? " + v + "% is unusually high.";
+    }
+    rateWarn.textContent = msg;
+    rateWarn.hidden = !msg;
+    return r;
+  }
+  customInput.addEventListener("input", () => { rate = readCustom(); calculate(); });
+  function nameOf(i) { return (names[i] || "").trim() || "Person " + (i + 1); }
+
+  // Draw one row per person (only when people or mode changes, so typing isn't interrupted)
+  function drawNames() {
+    while (names.length < people) names.push("");
+    while (own.length < people) own.push(0);
+    const box = document.getElementById("names");
+    box.innerHTML = "";
+    document.getElementById("cols").hidden = mode !== "items";
+    for (let i = 0; i < people; i++) {
+      const row = document.createElement("div");
+      row.className = "name-row";
+      row.innerHTML =
+        '<span class="num">' + (i + 1) + '</span>' +
+        '<input class="name" type="text" id="name-' + i + '" autocomplete="off" aria-label="Name of person ' + (i + 1) + '" placeholder="Person ' + (i + 1) + '">' +
+        (mode === "items"
+          ? '<input class="own" type="number" inputmode="decimal" min="0" step="0.01" id="own-' + i + '" aria-label="Own items for person ' + (i + 1) + ' in RM" placeholder="RM 0">'
+          : '') +
+        '<span class="owe" id="owe-' + i + '"></span>';
+      const nameInput = row.querySelector(".name");
+      nameInput.value = names[i];
+      nameInput.addEventListener("input", () => { names[i] = nameInput.value; });
+      const ownInput = row.querySelector(".own");
+      if (ownInput) {
+        ownInput.value = own[i] ? own[i] : "";
+        ownInput.addEventListener("input", () => {
+          const v = parseFloat(ownInput.value);
+          own[i] = isNaN(v) || v < 0 ? 0 : v;
+          calculate();
+        });
+      }
+      box.appendChild(row);
+    }
+  }
+
+  // 3. Do the maths and update the screen
+  function calculate() {
+    const bill = parseFloat(billInput.value);
+    const valid = !isNaN(bill) && bill >= 0;
+    document.getElementById("bill-error").hidden = valid || billInput.value === "";
+
+    const amount = valid ? bill : 0;
+    const service = amount * rate / 100;
+    const sst = sstOn ? (amount + service) * sstRate / 100 : 0; // SST on bill + service charge
+    const exact = amount + service + sst;
+
+    // Bank Negara rounding: total to the nearest 5 sen
+    const exactSen = Math.round(exact * 100);       // work in sen to avoid decimal errors
+    const totalSen = Math.round(exactSen / 5) * 5;
+    const total = totalSen / 100;
+
+    // Work out each person's share (in sen), rounded UP to the next 5 sen
+    let shares = [];
+    let sharedEach = 0;
+    let ownSum = 0;
+    let ownError = "";
+
+    if (mode === "equal") {
+      const eachSen = Math.ceil(totalSen / people / 5) * 5;
+      for (let i = 0; i < people; i++) shares.push(eachSen);
+    } else {
+      for (let i = 0; i < people; i++) ownSum += own[i] || 0;
+      if (ownSum > amount + 0.001) {
+        ownError = "Own items add up to " + rm(ownSum) + ", more than the bill of " + rm(amount) + ". Check the amounts.";
+      }
+      const shared = Math.max(0, amount - ownSum);   // what's left is shared equally
+      sharedEach = shared / people;
+      const factor = amount > 0 ? exact / amount : 0; // service + SST, in proportion
+      for (let i = 0; i < people; i++) {
+        const subtotal = (own[i] || 0) + sharedEach;
+        const personSen = Math.round(subtotal * factor * 100);
+        shares.push(Math.ceil(personSen / 5) * 5);
+      }
+    }
+
+    const collectedSen = shares.reduce((a, b) => a + b, 0);
+    const extra = (collectedSen - totalSen) / 100;
+
+    // Top number
+    if (mode === "equal") {
+      document.getElementById("answer-label").textContent = "Each person pays";
+      document.getElementById("big-number").textContent = (shares[0] / 100).toFixed(2);
+    } else {
+      document.getElementById("answer-label").textContent = "Total bill, split by what each ate";
+      document.getElementById("big-number").textContent = total.toFixed(2);
+    }
+
+    // Each person's amount next to their name
+    for (let i = 0; i < people; i++) {
+      const el = document.getElementById("owe-" + i);
+      if (el) el.textContent = rm(shares[i] / 100);
+    }
+
+    // Shared line + error (items mode only)
+    const sharedLine = document.getElementById("shared-line");
+    sharedLine.hidden = mode !== "items";
+    sharedLine.textContent = "Shared dishes: " + rm(Math.max(0, amount - ownSum)) + ", that's " + rm(sharedEach) + " each before service and SST.";
+    const ownErr = document.getElementById("own-error");
+    ownErr.hidden = !ownError;
+    ownErr.textContent = ownError;
+
+    // Receipt
+    document.getElementById("r-bill").textContent = rm(amount);
+    document.getElementById("r-sc-label").textContent = "Service charge " + rate + "%";
+    document.getElementById("r-sc").textContent = rm(service);
+    document.getElementById("r-sst").textContent = rm(sst);
+    document.getElementById("r-sst-label").textContent = "SST " + sstRate + "%";
+    document.getElementById("sst-title").textContent = "SST " + sstRate + "%";
+    document.getElementById("sst-rates").hidden = !sstOn;
+    document.getElementById("r-sst-row").hidden = !sstOn;
+    const adj = (totalSen - exactSen) / 100;
+    document.getElementById("r-round").textContent = (adj < 0 ? "−" : adj > 0 ? "+" : "") + rm(Math.abs(adj));
+    document.getElementById("r-total").textContent = rm(total);
+    document.getElementById("r-collect-label").textContent = mode === "equal"
+      ? people + " × " + rm(shares[0] / 100) + " collected"
+      : "Collected from " + people + (people === 1 ? " person" : " people");
+    document.getElementById("r-collect").textContent = rm(collectedSen / 100);
+    document.getElementById("r-extra").textContent = extra > 0.001
+      ? rm(extra) + " extra stays with whoever pays the cashier."
+      : "Splits exactly, nothing extra.";
+
+    peopleOut.innerHTML = people + "<em>" + (people === 1 ? "person" : "people") + "</em>";
+    minusBtn.disabled = people <= 1;
+
+    lastResult = { amount, total, shares, ownError };
+  }
+
+  // Build the WhatsApp message
+  function buildMessage() {
+    const r = lastResult;
+    let extras = "";
+    if (rate > 0) extras += " + " + rate + "% service";
+    if (sstOn) extras += " + " + sstRate + "% SST";
+    let msg = "Makan bill 🍽️\n";
+    msg += "Bill " + rm(r.amount) + extras + "\n";
+    msg += "Total: " + rm(r.total) + "\n";
+    msg += mode === "equal"
+      ? "Each pays: " + rm(r.shares[0] / 100) + "\n\n"
+      : "Split by what each person ate:\n\n";
+    for (let i = 0; i < people; i++) msg += "• " + nameOf(i) + " – " + rm(r.shares[i] / 100) + "\n";
+    return msg.trim();
+  }
+
+  const copyBtn = document.getElementById("copy");
+  const copyStatus = document.getElementById("copy-status");
+  const copyText = document.getElementById("copy-text");
+  copyBtn.addEventListener("click", () => {
+    if (lastResult.ownError) {
+      copyStatus.textContent = "Fix the own items first: they add up to more than the bill.";
+      return;
+    }
+    const msg = buildMessage();
+    copyText.value = msg;
+    const done = () => {
+      copyBtn.textContent = "Copied ✓";
+      copyBtn.classList.add("done");
+      copyStatus.textContent = "Now paste it in your WhatsApp group.";
+      copyText.hidden = true;
+      setTimeout(() => { copyBtn.textContent = "Copy for WhatsApp"; copyBtn.classList.remove("done"); }, 2500);
+    };
+    const fallback = () => {
+      copyText.hidden = false;
+      copyText.focus();
+      copyText.select();
+      copyStatus.textContent = "Couldn't copy automatically. The message is selected below: tap and hold, then Copy.";
+    };
+    try { navigator.clipboard.writeText(msg).then(done, fallback); } catch (e) { fallback(); }
+  });
+
+  // 4. React when you type or tap
+  billInput.addEventListener("input", calculate);
+  minusBtn.addEventListener("click", function () {
+    if (people > 1) {
+      people--;
+      names.length = people; // forget the removed person's name
+      own.length = people;   // and their own items
+      drawNames(); calculate();
+    }
+  });
+  plusBtn.addEventListener("click", function () { if (people < 50) { people++; drawNames(); calculate(); } });
+
+  rateBtns.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      rateBtns.forEach(function (b) { b.setAttribute("aria-pressed", b === btn ? "true" : "false"); });
+      usingCustom = btn.dataset.rate === "other";
+      customBox.hidden = !usingCustom;
+      if (usingCustom) {
+        rate = readCustom();
+        customInput.focus();
+      } else {
+        rate = Number(btn.dataset.rate);
+        rateWarn.hidden = true;
+      }
+      calculate();
+    });
+  });
+
+  modeBtns.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      mode = btn.dataset.mode;
+      modeBtns.forEach(function (b) { b.setAttribute("aria-pressed", b === btn ? "true" : "false"); });
+      document.getElementById("mode-help").textContent = mode === "equal"
+        ? "Everyone pays the same."
+        : "Type what each person ordered for themselves. Whatever's left of the bill is shared equally.";
+      drawNames(); calculate();
+    });
+  });
+
+  const sstBtn = document.getElementById("sst");
+  sstBtn.addEventListener("click", function () {
+    sstOn = !sstOn;
+    sstBtn.setAttribute("aria-pressed", sstOn ? "true" : "false");
+    calculate();
+  });
+
+  const sstBtns = document.querySelectorAll(".sst-btn");
+  sstBtns.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      sstRate = Number(btn.dataset.sst);
+      sstBtns.forEach(function (b) { b.setAttribute("aria-pressed", b === btn ? "true" : "false"); });
+      calculate();
+    });
+  });
+
+  drawNames();
+  calculate();
+</script>
+</body>
+</html>
