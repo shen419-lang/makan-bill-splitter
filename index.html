@@ -162,7 +162,7 @@ button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
     <label for="bill">Total bill</label>
     <div class="money">
       <span>RM</span>
-      <input id="bill" type="number" inputmode="decimal" min="0" step="0.01" value="120.00" placeholder="0.00">
+      <input id="bill" type="number" inputmode="decimal" min="0" step="0.01" value="" placeholder="0.00">
     </div>
     <p id="bill-error" class="error" hidden>Type the bill amount, for example 85.50.</p>
   </div>
@@ -227,7 +227,7 @@ button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
     <div class="row total"><span>Total</span><span class="dots"></span><span id="r-total">RM 139.90</span></div>
     <div class="row"><span id="r-collect-label">4 × RM 35.00 collected</span><span class="dots"></span><span id="r-collect">RM 140.00</span></div>
     <p class="note" id="r-extra">RM 0.10 extra stays with whoever pays the cashier.</p>
-    <p class="note">Total is rounded to the nearest 5 sen, following Bank Negara's rounding rule. Each share is then rounded up to the next 5 sen so the bill is always covered. Example amounts filled in; change them to your real bill.</p>
+    <p class="note">Total is rounded to the nearest 5 sen, following Bank Negara's rounding rule. Each share is then rounded up to the next 5 sen so the bill is always covered.</p>
   </section>
 
   <section class="copy">
@@ -244,7 +244,7 @@ button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
   let sstOn = true;       // SST switched on?
   let sstRate = 6;        // 6% food & drinks, 8% alcohol
   let mode = "equal";     // "equal" or "items"
-  const names = ["Ethan", "", "", ""];  // one name per person
+  const names = ["", "", "", ""];  // one name per person
   const own = [0, 0, 0, 0];             // each person's own items (RM)
   let lastResult = null;                // latest numbers, for the copy button
 
